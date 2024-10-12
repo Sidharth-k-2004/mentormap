@@ -26,32 +26,90 @@ db.connect(err => {
 
 // Route for signup
 app.post('/', (req, res) => {
-    const { srn, name, email, class: studentClass, password } = req.body;
-
-    // Insert the data into the Student table
-    const insertQuery = 'INSERT INTO Student (student_id, name, email, class, password) VALUES (?, ?, ?, ?, ?)';
-    db.query(insertQuery, [srn, name, email, studentClass, password], (err, result) => {
-        if (err) {
-            return res.status(500).send('Error adding student to the database.');
-        }
-        res.status(201).send('Student registered successfully.');
+    const { SRN, NAME, CLASS, EMAIL, PASS, DEPT_ID } = req.body;
+  
+    const sql = 'INSERT INTO student (SRN, NAME, CLASS, EMAIL, PASS, DEPT_ID) VALUES (?, ?, ?, ?, ?, ?)';
+    const values = [SRN, NAME, CLASS, EMAIL, PASS, DEPT_ID];
+  
+    db.query(sql, values, (err, result) => {
+      if (err) {
+        console.error('Error inserting into database:', err);
+        return res.status(500).json({ error: 'Database insertion failed' });
+      }
+  
+      console.log('Student signed up successfully');
+      res.status(200).json({ message: 'Student signed up successfully' });
     });
-});
+  });
+  
 
-// Route for login
 app.post('/login', (req, res) => {
     const { srn, password } = req.body;
 
     // Check if the credentials match a student in the database
-    const loginQuery = 'SELECT * FROM Student WHERE student_id = ? AND password = ?';
-    db.query(loginQuery, [srn, password], (err, results) => {
+    const loginQuery = 'SELECT * FROM Student WHERE SRN = ?';
+    db.query(loginQuery, [srn], (err, results) => {
         if (err) {
             return res.status(500).send('Error checking credentials.');
         }
-        if (results.length > 0) {
+
+        // If user not found
+        if (results.length === 0) {
+            return res.status(401).send('Invalid SRN or password.');
+        }
+
+        const user = results[0];
+
+        // Here you should verify the password (if hashed)
+        // For demonstration, we're checking plain text. In production, use bcrypt or similar.
+        if (user.PASS === password) {
             res.send('Login successful.');
         } else {
             res.status(401).send('Invalid SRN or password.');
+        }
+    });
+});
+app.post('/faculty', (req, res) => {
+    const { T_ID, NAME, EMAIL, PASS, DEPT_ID } = req.body;
+  
+    const sql = 'INSERT INTO teacher (T_ID, NAME,  EMAIL, PASS, DEPT_ID) VALUES (?, ?, ?, ?, ?)';
+    const values = [T_ID, NAME,  EMAIL, PASS, DEPT_ID];
+  
+    db.query(sql, values, (err, result) => {
+      if (err) {
+        console.error('Error inserting into database:', err);
+        return res.status(500).json({ error: 'Database insertion failed' });
+      }
+  
+      console.log('signed up successfully');
+      res.status(200).json({ message: 'Student signed up successfully' });
+    });
+  });
+  
+
+app.post('/facultylogin', (req, res) => {
+    const { tid, password } = req.body;
+
+    // Check if the credentials match a student in the database
+    const loginQuery = 'SELECT * FROM teacher WHERE T_ID = ?';
+    db.query(loginQuery, [tid], (err, results) => {
+        if (err) {
+            return res.status(500).send('Error checking credentials.');
+        }
+
+        // If user not found
+        if (results.length === 0) {
+            return res.status(401).send('Invalid tid or password.');
+        }
+
+        const user = results[0];
+
+        // Here you should verify the password (if hashed)
+        // For demonstration, we're checking plain text. In production, use bcrypt or similar.
+        if (user.PASS === password) {
+            res.send('Login successful.');
+        } else {
+            res.status(401).send('Invalid teacherid or password.');
         }
     });
 });
